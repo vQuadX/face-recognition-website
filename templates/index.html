@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Главная страница{% endblock %}
+{% block head %}
+    {{ super() }}
+    <link href="{{ url_for('static', filename='css/index-page.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block header %}
+
+{% endblock %}
+
+{% block content %}
+    <div class="cover-container d-flex h-100 p-3 mx-auto flex-column">
+        <header class="masthead mb-auto">
+            <div class="inner">
+                <h3 class="masthead-brand">FaceNet</h3>
+                <nav class="nav nav-masthead justify-content-center">
+                    <a class="nav-link active" href="/">Главная</a>
+                    <a class="nav-link" href="/identification">Идентификация</a>
+                    <a class="nav-link" href="/verification">Верификация</a>
+                    <a class="nav-link" href="#">Возможности</a>
+                </nav>
+            </div>
+        </header>
+
+        <main role="main" class="inner cover text-center">
+            <h1 class="cover-heading">Система распознавания лиц</h1>
+            <p class="lead font-weight-bold">позволяет идентифицировать или верифицировать лица на изображениях
+                <br> с помощью глубокого обучения</p>
+            {#        <p class="lead">#}
+            {#            <a href="#" class="btn btn-lg btn-secondary">Learn more</a>#}
+            {#        </p>#}
+        </main>
+
+        <footer class="mastfoot mt-auto">
+{#            <div class="inner">#}
+{#                <p>Cover template for <a href="https://getbootstrap.com/">Bootstrap</a>, by <a#}
+{#                        href="https://twitter.com/mdo">@mdo</a>.</p>#}
+{#            </div>#}
+        </footer>
+    </div>
+{% endblock %}
