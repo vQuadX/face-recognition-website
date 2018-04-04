@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}Верификация{% endblock %}
+{% block head %}
+    {{ super() }}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/open-iconic/1.1.1/font/css/open-iconic-bootstrap.min.css"
+          rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/header.css') }}" rel="stylesheet">
+
+    <script>
+        function openImage(canvasId) {
+            return function (e) {
+                const canvas = $(`#${canvasId}`).get(0);
+                const ctx = canvas.getContext('2d');
+                const file = e.target.files[0];
+                let src = URL.createObjectURL(file);
+                const img = new Image();
+                img.src = src;
+                img.addEventListener('load', function () {
+                    const img_width = this.naturalWidth;
+                    const img_height = this.naturalHeight;
+
+                    const max_width = canvas.width;
+                    const max_height = canvas.height;
+
+                    let ratio = 1;
+                    let x = 0, y = 0;
+                    if (img_width > max_width)
+                        ratio = max_width / img_width;
+                    if (img_height > max_height)
+                        ratio = Math.min(max_height / img_height, ratio);
+
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = '#cc0099';
+                    ctx.fillStyle = "#e2e3e5";
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(this, 0, 0, img_width * ratio, img_height * ratio);
+
+                    URL.revokeObjectURL(src);
+                    sendImage(file, ctx, ratio);
+                });
+            }
+        }
+
+        function drawFaceRectangles(canvasContext, faces) {
+            for ([x, y, w, h] of faces) {
+                canvasContext.strokeRect(x, y, w, h);
+            }
+        }
+
+        function sendImage(imageFile, canvasContext, ratio) {
+            const data = new FormData();
+            data.append('image', imageFile);
+            $.ajax({
+                url: 'verification',
+                data: data,
+                cache: false,
+                contentType: false,
+                processData: false,
+                method: 'POST',
+                success: function (data) {
+                    drawFaceRectangles(canvasContext, data['faces'].map(function (x) {
+                        return x.map(function (y) {
+                            return y * ratio
+                        })
+                    }))
+                }
+            });
+        }
+
+        $(function () {
+            $('#open-left-image').on('change', openImage('face-left-canvas'));
+            $('#open-right-image').on('change', openImage('face-right-canvas'));
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="header-container">
+        <div class="cover-container d-flex h-100 p-3 mx-auto flex-column">
+            <header class="masthead mb-auto">
+                <div class="inner">
+                    <h3 class="masthead-brand">FaceNet</h3>
+                    <nav class="nav nav-masthead justify-content-center">
+                        <a class="nav-link" href="/">Главная</a>
+                        <a class="nav-link" href="/identification">Идентификация</a>
+                        <a class="nav-link active" href="/verification">Верификация</a>
+                        <a class="nav-link" href="#">Возможности</a>
+                    </nav>
+                </div>
+            </header>
+        </div>
+    </div>
+    <div class="container">
+        <h1 class="my-4 text-center">Верификация лиц</h1>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4 box-shadow" id="meow">
+                    <canvas class="card-img-top" id="face-left-canvas" width="538" height="403"></canvas>
+                    <div class="card-body">
+                        <div class="form-inline d-flex justify-content-between">
+                            <input class="form-control form-control-sm w-50" type="text"
+                                   placeholder="URL-адрес изображения">
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="send-img">Отправить <span
+                                    class="oi oi-cloud-upload"></span></button>
+                            <label class="btn btn-outline-secondary btn-sm">
+                                Обзор <input type="file" id="open-left-image" hidden>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-4 box-shadow">
+                    <canvas class="card-img-top" id="face-right-canvas" width="538" height="403"></canvas>
+                    <div class="card-body">
+                        <div class="form-inline d-flex justify-content-between">
+                            <input class="form-control form-control-sm w-50" type="text"
+                                   placeholder="URL-адрес изображения">
+                            <button type="button" class="btn btn-outline-primary btn-sm">Отправить <span
+                                    class="oi oi-cloud-upload"></span></button>
+                            <label class="btn btn-outline-secondary btn-sm">
+                                Обзор <input type="file" id="open-right-image" hidden>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="alert alert-secondary" role="alert">
+                    Результаты проверки: оба портрета принадлежат одному человеку.
+                    Достоверность — <strong>0.7349</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
