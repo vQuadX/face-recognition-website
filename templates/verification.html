@@ -17,18 +17,27 @@
                 const img = new Image();
                 img.src = src;
                 img.addEventListener('load', function () {
-                    const img_width = this.naturalWidth;
-                    const img_height = this.naturalHeight;
+                    const imgWidth = this.naturalWidth;
+                    const imgHeight = this.naturalHeight;
 
-                    const max_width = canvas.width;
-                    const max_height = canvas.height;
+                    const maxWidth = canvas.width;
+                    const maxHeight = canvas.height;
 
                     let ratio = 1;
                     let x = 0, y = 0;
-                    if (img_width > max_width)
-                        ratio = max_width / img_width;
-                    if (img_height > max_height)
-                        ratio = Math.min(max_height / img_height, ratio);
+                    if (imgWidth > maxWidth) {
+                        ratio = maxWidth / imgWidth;
+                    }
+                    if (imgHeight > maxHeight) {
+                        ratio = Math.min(maxHeight / imgHeight, ratio);
+                    }
+
+                    const resizedImgWidth = imgWidth * ratio;
+                    const resizedImgHeight = imgHeight * ratio;
+
+                    if (resizedImgWidth < maxWidth) {
+                        x = (maxWidth - resizedImgWidth) / 2
+                    }
 
                     ctx.lineWidth = 3;
                     ctx.strokeStyle = '#cc0099';
@@ -36,10 +45,10 @@
 
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.drawImage(this, 0, 0, img_width * ratio, img_height * ratio);
+                    ctx.drawImage(this, x, y, resizedImgWidth, resizedImgHeight);
 
                     URL.revokeObjectURL(src);
-                    sendImage(file, ctx, ratio);
+                    sendImage(file, ctx, ratio, [x, y]);
                 });
             }
         }
@@ -50,7 +59,7 @@
             }
         }
 
-        function sendImage(imageFile, canvasContext, ratio) {
+        function sendImage(imageFile, canvasContext, ratio, offset) {
             const data = new FormData();
             data.append('image', imageFile);
             $.ajax({
@@ -62,9 +71,7 @@
                 method: 'POST',
                 success: function (data) {
                     drawFaceRectangles(canvasContext, data['faces'].map(function (x) {
-                        return x.map(function (y) {
-                            return y * ratio
-                        })
+                        return [x[0] * ratio + offset[0], x[1] * ratio + offset[1], x[2] * ratio, x[3] * ratio]
                     }))
                 }
             });
