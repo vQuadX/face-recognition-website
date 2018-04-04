@@ -7,6 +7,12 @@
           rel="stylesheet">
     <link href="{{ url_for('static', filename='css/header.css') }}" rel="stylesheet">
 
+    <style>
+        .w-60 {
+            width: 60% !important;
+        }
+    </style>
+
     <script>
         function openImage(canvasId) {
             return function (e) {
@@ -108,11 +114,11 @@
                     <canvas class="card-img-top" id="face-left-canvas" width="538" height="403"></canvas>
                     <div class="card-body">
                         <div class="form-inline d-flex justify-content-between">
-                            <input class="form-control form-control-sm w-50" type="text"
+                            <input class="form-control form-control-sm w-60" type="text"
                                    placeholder="URL-адрес изображения">
                             <button type="button" class="btn btn-outline-primary btn-sm" id="send-img">Отправить <span
                                     class="oi oi-cloud-upload"></span></button>
-                            <label class="btn btn-outline-secondary btn-sm">
+                            <label class="btn btn-outline-secondary btn-sm ml-3">
                                 Обзор <input type="file" id="open-left-image" hidden>
                             </label>
                         </div>
@@ -124,11 +130,11 @@
                     <canvas class="card-img-top" id="face-right-canvas" width="538" height="403"></canvas>
                     <div class="card-body">
                         <div class="form-inline d-flex justify-content-between">
-                            <input class="form-control form-control-sm w-50" type="text"
+                            <input class="form-control form-control-sm w-60" type="text"
                                    placeholder="URL-адрес изображения">
                             <button type="button" class="btn btn-outline-primary btn-sm">Отправить <span
                                     class="oi oi-cloud-upload"></span></button>
-                            <label class="btn btn-outline-secondary btn-sm">
+                            <label class="btn btn-outline-secondary btn-sm ml-3">
                                 Обзор <input type="file" id="open-right-image" hidden>
                             </label>
                         </div>
