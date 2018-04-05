@@ -14,12 +14,22 @@
     </style>
 
     <script>
-        function openImage(canvasId) {
+        const urlRegexp = new RegExp('^https?://', 'i');
+        function openImage(canvasId, urlInputId = null) {
             return function (e) {
                 const canvas = $(`#${canvasId}`).get(0);
                 const ctx = canvas.getContext('2d');
-                const file = e.target.files[0];
-                let src = URL.createObjectURL(file);
+                let src, file = null;
+                if (!urlInputId) {
+                    file = e.target.files[0];
+                    src = URL.createObjectURL(file);
+                } else {
+                    src = $(`#${urlInputId}`).val();
+                    if (!urlRegexp.test(src)) {
+                        return;
+                    }
+                }
+
                 const img = new Image();
                 img.src = src;
                 img.addEventListener('load', function () {
@@ -53,8 +63,12 @@
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                     ctx.drawImage(this, x, y, resizedImgWidth, resizedImgHeight);
 
-                    URL.revokeObjectURL(src);
-                    sendImage(file, ctx, ratio, [x, y]);
+                    if (file) {
+                        sendImage(file, ctx, ratio, [x, y]);
+                        URL.revokeObjectURL(src);
+                    } else {
+                        sendImageURL(src, ctx, ratio, [x, y]);
+                    }
                 });
             }
         }
@@ -83,9 +97,24 @@
             });
         }
 
+        function sendImageURL(imageURL, canvasContext, ratio, offset) {
+            $.ajax({
+                url: 'verification',
+                data: {'image_url': imageURL},
+                method: 'GET',
+                success: function (data) {
+                    drawFaceRectangles(canvasContext, data['faces'].map(function (x) {
+                        return [x[0] * ratio + offset[0], x[1] * ratio + offset[1], x[2] * ratio, x[3] * ratio]
+                    }))
+                }
+            });
+        }
+
         $(function () {
             $('#open-left-image').on('change', openImage('face-left-canvas'));
             $('#open-right-image').on('change', openImage('face-right-canvas'));
+            $('#open-left-image-url').on('click', openImage('face-left-canvas', 'left-image-url'));
+            $('#open-right-image-url').on('click', openImage('face-right-canvas', 'right-image-url'));
         });
     </script>
 {% endblock %}
@@ -114,9 +143,10 @@
                     <canvas class="card-img-top" id="face-left-canvas" width="538" height="403"></canvas>
                     <div class="card-body">
                         <div class="form-inline d-flex justify-content-between">
-                            <input class="form-control form-control-sm w-60" type="text"
+                            <input class="form-control form-control-sm w-60" type="text" id="left-image-url"
                                    placeholder="URL-адрес изображения">
-                            <button type="button" class="btn btn-outline-primary btn-sm" id="send-img">Отправить <span
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="open-left-image-url">
+                                Отправить <span
                                     class="oi oi-cloud-upload"></span></button>
                             <label class="btn btn-outline-secondary btn-sm ml-3">
                                 Обзор <input type="file" id="open-left-image" hidden>
@@ -130,9 +160,10 @@
                     <canvas class="card-img-top" id="face-right-canvas" width="538" height="403"></canvas>
                     <div class="card-body">
                         <div class="form-inline d-flex justify-content-between">
-                            <input class="form-control form-control-sm w-60" type="text"
+                            <input class="form-control form-control-sm w-60" type="text" id="right-image-url"
                                    placeholder="URL-адрес изображения">
-                            <button type="button" class="btn btn-outline-primary btn-sm">Отправить <span
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="open-right-image-url">
+                                Отправить <span
                                     class="oi oi-cloud-upload"></span></button>
                             <label class="btn btn-outline-secondary btn-sm ml-3">
                                 Обзор <input type="file" id="open-right-image" hidden>
