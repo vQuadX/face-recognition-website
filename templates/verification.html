@@ -74,6 +74,18 @@
                             drawFaceRectangles(ctx, scaleRectangle(data['faces'].map(f => f['area']), ratio, [x, y]));
                             if (data['found_faces'] === 1) {
                                 faces[side] = data['faces'][0]['embeddings'];
+                                if (faces.left && faces.right) {
+                                    sendFaceEmbeddings([faces.left, faces.right]).done(data => {
+                                        const distance = data['distance'].toFixed(4);
+                                        let result = '';
+                                        if (distance <= 0.6) {
+                                            result = 'оба портрета принадлежат одному человеку';
+                                        } else {
+                                            result = 'портреты принадлежат разным людям'
+                                        }
+                                        $('#result').html(`Результат проверки: <strong>${result}</strong>. Расстояние дескрипторов — <strong>${distance}</strong>`)
+                                    })
+                                }
                             }
                         }
                     );
@@ -94,6 +106,16 @@
             for ([x, y, w, h] of faces) {
                 canvasContext.strokeRect(x, y, w, h);
             }
+        }
+
+        function sendFaceEmbeddings(embeddings) {
+            return $.ajax({
+                url: 'verification',
+                method: 'POST',
+                data: JSON.stringify({'face_embeddings': embeddings}),
+                dataType: 'json',
+                contentType: "application/json; charset=utf-8"
+            })
         }
 
         function sendImage(imageFile) {
@@ -182,9 +204,9 @@
         </div>
         <div class="row">
             <div class="col-md-12">
-                <div class="alert alert-secondary" role="alert">
-                    Результаты проверки: оба портрета принадлежат одному человеку.
-                    Достоверность — <strong>0.7349</strong>
+                <div class="alert alert-secondary" style="min-height: 50px;" role="alert" id="result">
+                    {#                    Результат проверки: <strong>оба портрета принадлежат одному человеку</strong>.#}
+                    {#                    Расстояние дескрипторов — <strong>0.7349</strong>#}
                 </div>
             </div>
         </div>

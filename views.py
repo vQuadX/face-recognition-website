@@ -31,6 +31,14 @@ def verification():
             return jsonify(response)
         return render_template('verification.html')
     elif request.method == 'POST':
+        if request.is_json:
+            face_embeddings = request.json.get('face_embeddings')
+            if face_embeddings:
+                response = requests.post(
+                    f'{FACE_RECOGNITION_SERVER}/compare-embeddings',
+                    json=face_embeddings
+                ).json()
+                return jsonify(response)
         image = request.files['image']
         response = requests.post(
             f'{FACE_RECOGNITION_SERVER}/recognize-faces',
