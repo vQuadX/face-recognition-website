@@ -15,16 +15,22 @@
 
     <script>
         const urlRegexp = new RegExp('^https?://', 'i');
-        function openImage(canvasId, urlInputId = null) {
+
+        let faces = {
+            'left': null,
+            'right': null
+        };
+
+        function openImage(side, fromURL = false) {
             return function (e) {
-                const canvas = $(`#${canvasId}`).get(0);
+                const canvas = $(`#face-${side}-canvas`).get(0);
                 const ctx = canvas.getContext('2d');
                 let src, file = null;
-                if (!urlInputId) {
+                if (!fromURL) {
                     file = e.target.files[0];
                     src = URL.createObjectURL(file);
                 } else {
-                    src = $(`#${urlInputId}`).val();
+                    src = $(`#${side}-image-url`).val();
                     if (!urlRegexp.test(src)) {
                         return;
                     }
@@ -63,14 +69,25 @@
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                     ctx.drawImage(this, x, y, resizedImgWidth, resizedImgHeight);
 
-                    if (file) {
-                        sendImage(file, ctx, ratio, [x, y]);
+                    let promise = fromURL ? sendImageURL(src) : sendImage(file);
+                    promise.done(data => {
+                            drawFaceRectangles(ctx, scaleRectangle(data['faces'].map(f => f['area']), ratio, [x, y]));
+                            if (data['found_faces'] === 1) {
+                                faces[side] = data['faces'][0]['embeddings'];
+                            }
+                        }
+                    );
+                    if (!fromURL) {
                         URL.revokeObjectURL(src);
-                    } else {
-                        sendImageURL(src, ctx, ratio, [x, y]);
                     }
                 });
             }
+        }
+
+        function scaleRectangle(faceAreas, ratio, offset) {
+            return faceAreas.map(x => {
+                return [x[0] * ratio + offset[0], x[1] * ratio + offset[1], x[2] * ratio, x[3] * ratio]
+            });
         }
 
         function drawFaceRectangles(canvasContext, faces) {
@@ -79,42 +96,32 @@
             }
         }
 
-        function sendImage(imageFile, canvasContext, ratio, offset) {
+        function sendImage(imageFile) {
             const data = new FormData();
             data.append('image', imageFile);
-            $.ajax({
+            return $.ajax({
                 url: 'verification',
+                method: 'POST',
                 data: data,
                 cache: false,
                 contentType: false,
-                processData: false,
-                method: 'POST',
-                success: function (data) {
-                    drawFaceRectangles(canvasContext, data['faces'].map(function (x) {
-                        return [x[0] * ratio + offset[0], x[1] * ratio + offset[1], x[2] * ratio, x[3] * ratio]
-                    }))
-                }
+                processData: false
             });
         }
 
-        function sendImageURL(imageURL, canvasContext, ratio, offset) {
-            $.ajax({
+        function sendImageURL(url) {
+            return $.ajax({
                 url: 'verification',
-                data: {'image_url': imageURL},
                 method: 'GET',
-                success: function (data) {
-                    drawFaceRectangles(canvasContext, data['faces'].map(function (x) {
-                        return [x[0] * ratio + offset[0], x[1] * ratio + offset[1], x[2] * ratio, x[3] * ratio]
-                    }))
-                }
+                data: {'image_url': url}
             });
         }
 
         $(function () {
-            $('#open-left-image').on('change', openImage('face-left-canvas'));
-            $('#open-right-image').on('change', openImage('face-right-canvas'));
-            $('#open-left-image-url').on('click', openImage('face-left-canvas', 'left-image-url'));
-            $('#open-right-image-url').on('click', openImage('face-right-canvas', 'right-image-url'));
+            $('#open-left-image').on('change', openImage('left'));
+            $('#open-right-image').on('change', openImage('right'));
+            $('#open-left-image-url').on('click', openImage('left', true));
+            $('#open-right-image-url').on('click', openImage('right', true));
         });
     </script>
 {% endblock %}

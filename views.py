@@ -22,18 +22,20 @@ def verification():
             except RequestException:
                 return jsonify({'error': 'invalid image URL'})
 
-            return jsonify(requests.post(
-                f'{FACE_RECOGNITION_SERVER}/find-faces',
+            response = requests.post(
+                f'{FACE_RECOGNITION_SERVER}/recognize-faces',
                 files={
                     'image': img_data
                 }
-            ).json())
+            ).json()
+            return jsonify(response)
         return render_template('verification.html')
     elif request.method == 'POST':
         image = request.files['image']
-        return jsonify(requests.post(
-            f'{FACE_RECOGNITION_SERVER}/find-faces',
+        response = requests.post(
+            f'{FACE_RECOGNITION_SERVER}/recognize-faces',
             files={
                 'image': image.stream
             }
-        ).json())
+        ).json()
+        return jsonify(response)
