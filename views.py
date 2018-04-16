@@ -29,7 +29,8 @@ def verification():
                 }
             ).json()
             return jsonify(response)
-        return render_template('verification.html')
+        context = {'init_js_script': 'Verification'}
+        return render_template('verification.html', **context)
     elif request.method == 'POST':
         if request.is_json:
             face_embeddings = request.json.get('face_embeddings')

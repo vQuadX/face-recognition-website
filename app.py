@@ -23,6 +23,12 @@ def initdb():
 
 
 @app.context_processor
+def base_js():
+    frontend = app.config.get('FRONTEND')
+    return {'base_js': frontend.get('client_js') or [] if frontend else []}
+
+
+@app.context_processor
 def override_url_for():
     return {'url_for': dated_url_for}
 
