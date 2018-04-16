@@ -12,140 +12,6 @@
             width: 60% !important;
         }
     </style>
-
-    <script>
-        const urlRegexp = new RegExp('^https?://', 'i');
-
-        let faces = {
-            'left': null,
-            'right': null
-        };
-
-        function openImage(side, fromURL = false) {
-            return function (e) {
-                const canvas = $(`#face-${side}-canvas`).get(0);
-                const ctx = canvas.getContext('2d');
-                let src, file = null;
-                if (!fromURL) {
-                    file = e.target.files[0];
-                    src = URL.createObjectURL(file);
-                } else {
-                    src = $(`#${side}-image-url`).val();
-                    if (!urlRegexp.test(src)) {
-                        return;
-                    }
-                }
-
-                const img = new Image();
-                img.src = src;
-                img.addEventListener('load', function () {
-                    const imgWidth = this.naturalWidth;
-                    const imgHeight = this.naturalHeight;
-
-                    const maxWidth = canvas.width;
-                    const maxHeight = canvas.height;
-
-                    let ratio = 1;
-                    let x = 0, y = 0;
-                    if (imgWidth > maxWidth) {
-                        ratio = maxWidth / imgWidth;
-                    }
-                    if (imgHeight > maxHeight) {
-                        ratio = Math.min(maxHeight / imgHeight, ratio);
-                    }
-
-                    const resizedImgWidth = imgWidth * ratio;
-                    const resizedImgHeight = imgHeight * ratio;
-
-                    if (resizedImgWidth < maxWidth) {
-                        x = (maxWidth - resizedImgWidth) / 2
-                    }
-
-                    ctx.lineWidth = 3;
-                    ctx.strokeStyle = '#cc0099';
-                    ctx.fillStyle = "#e2e3e5";
-
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.drawImage(this, x, y, resizedImgWidth, resizedImgHeight);
-
-                    let promise = fromURL ? sendImageURL(src) : sendImage(file);
-                    promise.done(data => {
-                            drawFaceRectangles(ctx, scaleRectangle(data['faces'].map(f => f['area']), ratio, [x, y]));
-                            if (data['found_faces'] === 1) {
-                                faces[side] = data['faces'][0]['embeddings'];
-                                if (faces.left && faces.right) {
-                                    sendFaceEmbeddings([faces.left, faces.right]).done(data => {
-                                        const distance = data['distance'].toFixed(4);
-                                        let result = '';
-                                        if (distance <= 0.6) {
-                                            result = 'оба портрета принадлежат одному человеку';
-                                        } else {
-                                            result = 'портреты принадлежат разным людям'
-                                        }
-                                        $('#result').html(`Результат проверки: <strong>${result}</strong>. Расстояние дескрипторов — <strong>${distance}</strong>`)
-                                    })
-                                }
-                            }
-                        }
-                    );
-                    if (!fromURL) {
-                        URL.revokeObjectURL(src);
-                    }
-                });
-            }
-        }
-
-        function scaleRectangle(faceAreas, ratio, offset) {
-            return faceAreas.map(x => {
-                return [x[0] * ratio + offset[0], x[1] * ratio + offset[1], x[2] * ratio, x[3] * ratio]
-            });
-        }
-
-        function drawFaceRectangles(canvasContext, faces) {
-            for ([x, y, w, h] of faces) {
-                canvasContext.strokeRect(x, y, w, h);
-            }
-        }
-
-        function sendFaceEmbeddings(embeddings) {
-            return $.ajax({
-                url: 'verification',
-                method: 'POST',
-                data: JSON.stringify({'face_embeddings': embeddings}),
-                dataType: 'json',
-                contentType: "application/json; charset=utf-8"
-            })
-        }
-
-        function sendImage(imageFile) {
-            const data = new FormData();
-            data.append('image', imageFile);
-            return $.ajax({
-                url: 'verification',
-                method: 'POST',
-                data: data,
-                cache: false,
-                contentType: false,
-                processData: false
-            });
-        }
-
-        function sendImageURL(url) {
-            return $.ajax({
-                url: 'verification',
-                method: 'GET',
-                data: {'image_url': url}
-            });
-        }
-
-        $(function () {
-            $('#open-left-image').on('change', openImage('left'));
-            $('#open-right-image').on('change', openImage('right'));
-            $('#open-left-image-url').on('click', openImage('left', true));
-            $('#open-right-image-url').on('click', openImage('right', true));
-        });
-    </script>
 {% endblock %}
 
 {% block content %}
@@ -164,15 +30,15 @@
             </header>
         </div>
     </div>
-    <div class="container">
+    <div class="container" id="verification-container">
         <h1 class="my-4 text-center">Верификация лиц</h1>
         <div class="row">
             <div class="col-md-6">
                 <div class="card mb-4 box-shadow" id="meow">
-                    <canvas class="card-img-top" id="face-left-canvas" width="538" height="403"></canvas>
+                    <canvas class="card-img-top face-canvas face-canvas--left" width="538" height="403"></canvas>
                     <div class="card-body">
                         <div class="form-inline d-flex justify-content-between">
-                            <input class="form-control form-control-sm w-60" type="text" id="left-image-url"
+                            <input class="form-control form-control-sm w-60 image-url image-url--left" type="text"
                                    placeholder="URL-адрес изображения">
                             <button type="button" class="btn btn-outline-primary btn-sm" id="open-left-image-url">
                                 Отправить <span
@@ -186,10 +52,10 @@
             </div>
             <div class="col-md-6">
                 <div class="card mb-4 box-shadow">
-                    <canvas class="card-img-top" id="face-right-canvas" width="538" height="403"></canvas>
+                    <canvas class="card-img-top face-canvas face-canvas--right" width="538" height="403"></canvas>
                     <div class="card-body">
                         <div class="form-inline d-flex justify-content-between">
-                            <input class="form-control form-control-sm w-60" type="text" id="right-image-url"
+                            <input class="form-control form-control-sm w-60 image-url image-url--right" type="text"
                                    placeholder="URL-адрес изображения">
                             <button type="button" class="btn btn-outline-primary btn-sm" id="open-right-image-url">
                                 Отправить <span

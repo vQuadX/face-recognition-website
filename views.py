@@ -22,8 +22,8 @@ def verification():
             except RequestException:
                 return jsonify({'error': 'invalid image URL'})
 
-            response = requests.post(
-                f'{FACE_RECOGNITION_SERVER}/recognize-faces',
+            response = recognition_api.post(
+                f'http://{FACE_RECOGNITION_SERVER}/recognize-faces',
                 files={
                     'image': img_data
                 }
@@ -35,16 +35,20 @@ def verification():
         if request.is_json:
             face_embeddings = request.json.get('face_embeddings')
             if face_embeddings:
-                response = requests.post(
-                    f'{FACE_RECOGNITION_SERVER}/compare-embeddings',
+                response = recognition_api.post(
+                    f'http://{FACE_RECOGNITION_SERVER}/compare-embeddings',
                     json=face_embeddings
                 ).json()
                 return jsonify(response)
-        image = request.files['image']
-        response = requests.post(
-            f'{FACE_RECOGNITION_SERVER}/recognize-faces',
-            files={
-                'image': image.stream
-            }
-        ).json()
-        return jsonify(response)
+
+        image = request.files.get('image')
+        if image:
+            response = recognition_api.post(
+                f'http://{FACE_RECOGNITION_SERVER}/recognize-faces',
+                files={
+                    'image': image.stream
+                }
+            ).json()
+            return jsonify(response)
+        else:
+            return jsonify({'error': 'image file required'})
