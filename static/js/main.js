@@ -83,6 +83,10 @@ $.FaceRecognizer.utils = {
                 height: r.height * ratio
             }
         });
+    },
+    collides: function (point, square) {
+        return point.x >= square.x && point.x <= (square.x + square.width) &&
+            point.y >= square.y && point.y <= (square.y + square.height);
     }
 
 };

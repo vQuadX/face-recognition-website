@@ -1,6 +1,7 @@
 from flask_security import UserMixin
 from flask_security import RoleMixin
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func
 
 db = SQLAlchemy()
 
@@ -26,7 +27,7 @@ class RolesUsers(db.Model):
     __tablename__ = 'roles_users'
     id = db.Column(db.Integer(), primary_key=True)
     user_id = db.Column('user_id', db.Integer(), db.ForeignKey('users.id'))
-    role_id = db.Column('role_id', db.Integer(), db.ForeignKey('roles   .id'))
+    role_id = db.Column('role_id', db.Integer(), db.ForeignKey('roles.id'))
 
 
 class Role(db.Model, RoleMixin):
@@ -34,3 +35,17 @@ class Role(db.Model, RoleMixin):
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(80), unique=True)
     description = db.Column(db.String(255))
+
+
+class Person(db.Model):
+    __tablename__ = 'persons'
+    id = db.Column(db.String(36), primary_key=True)
+    email = db.Column(db.String(255), unique=True)
+    first_name = db.Column(db.String(255))
+    last_name = db.Column(db.String(255))
+    registered = db.Column(db.DateTime(), server_default=func.now())
+
+    def to_json(self):
+        d = dict(self.__dict__)
+        del d['_sa_instance_state']
+        return d
