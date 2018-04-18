@@ -64,11 +64,21 @@ $.FaceRecognizer.image = {
         this.load(canvas, src, callback);
         // URL.revokeObjectURL(src);
     },
-    drawFaceRectangles: function (ctx, rectangles) {
+    drawFaceRectangle: function (ctx, rectangle, strokeStyle = '#cc0099') {
+        ({x, y, width, height} = rectangle);
+        let tempStrokeStyle = ctx.strokeStyle;
+        ctx.strokeStyle = strokeStyle;
+        ctx.strokeRect(x, y, width, height);
+        ctx.strokeStyle = tempStrokeStyle;
+    },
+    drawFaceRectangles: function (ctx, rectangles, strokeStyle = '#cc0099') {
+        let tempStrokeStyle = ctx.strokeStyle;
+        ctx.strokeStyle = strokeStyle;
         for (let i = 0; i < rectangles.length; i++) {
             ({x, y, width, height} = rectangles[i]);
             ctx.strokeRect(x, y, width, height);
         }
+        ctx.strokeStyle = tempStrokeStyle;
     },
 };
 

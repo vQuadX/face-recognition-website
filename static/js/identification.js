@@ -51,9 +51,7 @@ $.FaceRecognizer.Identification = {
                         popoverOptions.offset = this.getOffset(this.personFaces[i]);
                         let personInfo = this.perosonsInfo[i];
                         popoverOptions.title = personInfo ? `${personInfo['first_name']} ${personInfo['last_name']}` : 'Неизвестный';
-                        if (personInfo) {
-                            popoverOptions.content = this.formatPersonDescription(personInfo);
-                        }
+                        popoverOptions.content = personInfo ? this.formatPersonDescription(personInfo) : '';
                         canvasWrapper.popover(popoverOptions);
                         canvasWrapper.popover('show');
                         let popoverTip = $(canvasWrapper.data('bs.popover').tip);
@@ -100,8 +98,10 @@ $.FaceRecognizer.Identification = {
                 let persons = data['persons'];
                 this.perosonsInfo = persons.map(f => f['info']);
                 this.personFaces = this.utils.scaleRectangles(persons.map(f => f['area']), ratio, offset);
-                console.log(this.personFaces);
-                this.image.drawFaceRectangles(ctx, this.personFaces);
+                for (let i = 0; i < this.personFaces.length; i++) {
+                    let color = this.perosonsInfo[i] ? '#4CCC2F' : '#CC2926';
+                    this.image.drawFaceRectangle(ctx, this.personFaces[i], color);
+                }
             }
         );
     },
