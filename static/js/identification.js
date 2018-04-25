@@ -3,8 +3,27 @@ $.FaceRecognizer.Identification = {
         this.container = $('#identification-container');
         $.FaceRecognizer.image.init(this.container);
         this.canvas = this.container.find('.face-canvas').get(0);
+        this.ctx = this.canvas.getContext('2d');
+        this.ctx.lineWidth = 3;
+        this.ctx.font = 'bold 16px Arial';
         this.utils = $.FaceRecognizer.utils;
         this.image = $.FaceRecognizer.image;
+
+        this.video = $('#webcam').get(0);
+        this.socket = new WebSocket(`ws://${window.recognition_server}/ws`);
+        this.streamStarted = false;
+
+        this.constraints = {
+            video: {
+                width: {
+                    exact: 640
+                },
+                height: {
+                    exact: 479
+                }
+            },
+            audio: false
+        };
 
         this.personFaces = [];
         this.perosonsInfo = [];
@@ -73,6 +92,96 @@ $.FaceRecognizer.Identification = {
                 collidesRectangle = -1;
             }
         });
+
+        let faces;
+        let personsData;
+        this.socket.onmessage = function (event) {
+            faces = [];
+            personsData = [];
+            let data = JSON.parse(event.data);
+            if (data.hasOwnProperty('persons')) {
+                for (let i = 0; i < data.persons.length; i++) {
+                    let person = data.persons[i];
+                    let personId = person.id;
+                    faces.push(person.area);
+                    if (personId) {
+                        $.ajax({
+                            url: `getPersonById/${person.id}`,
+                            success: function (data) {
+                                personsData.push(data);
+                            },
+                            async: false
+                        });
+                    } else {
+                        personsData.push(null);
+                    }
+                }
+            } else {
+                faces = null;
+            }
+        };
+
+
+        this.video.addEventListener('play', function () {
+            let identification = $.FaceRecognizer.Identification;
+            let that = this;
+            let frames = 0;
+            (function loop() {
+                if (!that.paused && !that.ended) {
+                    identification.ctx.drawImage(that, 0, 0);
+                    let src = identification.canvas.toDataURL('image/jpeg');
+                    if (faces) {
+                        identification.drawFaceRectanglesWithLabels(faces, personsData);
+                    }
+                    if (frames % 5 === 0) {
+                        identification.socket.send(src);
+                    }
+                    frames++;
+                    setTimeout(loop, 1000 / 25);
+                }
+            })();
+        }, 0);
+
+        let imageCapture;
+
+        function success(stream) {
+            that.video.srcObject = stream;
+            const track = stream.getVideoTracks()[0];
+            console.log(track.getConstraints());
+            imageCapture = new ImageCapture(track);
+        }
+
+        function error(error) {
+            console.error(error)
+        }
+
+        function stopStream() {
+            imageCapture.grabFrame().then(bitmap => {
+                imageCapture.takePhoto().then(blob => {
+                    that.highlightAndIdentifyFaces(that.sendImageFile(blob), 1, {x: 0, y: 0}, that.ctx);
+                    that.ctx.drawImage(bitmap, 0, 0);
+                    let tracks = that.video.srcObject.getTracks();
+                    tracks.forEach(function (track) {
+                        track.stop();
+                    });
+                    that.video.srcObject = null;
+                });
+            });
+            faces = null;
+        }
+
+        $('#open-webcam').click(function () {
+            if (!that.streamStarted) {
+                that.personFaces = [];
+                that.perosonsInfo = [];
+                navigator.mediaDevices.getUserMedia(that.constraints).then(success).catch(error);
+                that.video.play();
+                that.streamStarted = true;
+            } else {
+                that.streamStarted = false;
+                stopStream();
+            }
+        });
     },
     sendImageFile: function (imageFile) {
         const data = new FormData();
@@ -110,7 +219,25 @@ $.FaceRecognizer.Identification = {
     },
     formatPersonDescription: function (info) {
         return `Электоронная почта:<br>${info['email']}<br>` +
-        `Зарегистрирован:<br>${info['registered']}`
+            `Зарегистрирован:<br>${info['registered']['formatted']}`
+    },
+    // TODO persons, faces
+    drawFaceRectanglesWithLabels: function (faces, persons) {
+        for (let i = 0; i < faces.length; i++) {
+            ({x, y} = faces[i]);
+            let person = persons[i];
+            let strokeStyle = '#CC2926';
+            if (person) {
+                if (!person.hasOwnProperty('error')) {
+                    strokeStyle = '#4CCC2F';
+                    this.ctx.fillStyle = strokeStyle;
+                    this.ctx.fillText(`${person['first_name']} ${person['last_name']}`, x, y - 10);
+                }
+            } else {
+                this.ctx.fillStyle = strokeStyle;
+                this.ctx.fillText(`Неизвестный`, x, y - 10);
+            }
+            this.image.drawFaceRectangle(this.ctx, faces[i], strokeStyle)
+        }
     }
 };
-

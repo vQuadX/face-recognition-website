@@ -15,9 +15,12 @@
 
     <style>
         .image-url {
-            width: 36% !important;
+            width: 45% !important;
         }
     </style>
+    <script>
+        window.recognition_server = "{{ recognition_server }}";
+    </script>
 {% endblock %}
 
 {% block content %}
@@ -37,13 +40,13 @@
         </div>
     </div>
     <div class="container" id="identification-container">
-        {#        <video id="webcam" hidden></video>#}
+        <video id="webcam" hidden></video>
         <h1 class="my-4 text-center">Идентификация лица</h1>
         <div class="row justify-content-md-center">
-            <div class="col-md-6">
+            <div class="col-md-7">
                 <div class="card mb-4 box-shadow" id="meow">
                     <div id="face-canvas-wrapper">
-                        <canvas class="card-img-top face-canvas" width="538" height="403"></canvas>
+                        <canvas class="card-img-top face-canvas" width="640" height="479"></canvas>
                     </div>
                     <div class="card-body">
                         <div class="form-inline d-flex justify-content-between">
