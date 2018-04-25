@@ -1,3 +1,5 @@
+from datetime import timezone
+
 import requests
 from flask import render_template, Blueprint, request, jsonify
 from requests import RequestException
@@ -5,6 +7,7 @@ from requests import RequestException
 from auth import authorize
 from models import Person
 from settings import FACE_RECOGNITION_SERVER
+from utils import format_datetime
 
 bp = Blueprint('views', __name__)
 recognition_api = authorize()
@@ -56,6 +59,11 @@ def identification():
                         if person_info:
                             person_info = person_info.to_json()
                             del person_info['id']
+                            registered = person_info['registered']
+                            person_info['registered'] = {
+                                'utc': registered.replace(tzinfo=timezone.utc).timestamp(),
+                                'formatted': format_datetime(registered)
+                            }
                         person['info'] = person_info
             return jsonify(response)
         else:
