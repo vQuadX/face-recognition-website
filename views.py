@@ -1,11 +1,12 @@
 from datetime import timezone
 
 import requests
-from flask import render_template, Blueprint, request, jsonify
+from flask import render_template, Blueprint, request, jsonify, flash
 from requests import RequestException
 
 from auth import authorize
-from models import Person
+from forms import AddPersonForm
+from models import Person, db
 from settings import FACE_RECOGNITION_SERVER
 from utils import format_datetime
 
@@ -111,6 +112,78 @@ def verification():
         if image:
             response = recognition_api.post(
                 f'http://{FACE_RECOGNITION_SERVER}/recognize-faces',
+                files={
+                    'image': image.stream
+                }
+            ).json()
+            return jsonify(response)
+        else:
+            return jsonify({'error': 'image file required'})
+
+
+@bp.route('/add-person', methods=['GET', 'POST'])
+def add_person():
+    form = AddPersonForm()
+    if form.validate_on_submit():
+        person_email = form.email.data
+        person_registered = bool(Person.query.filter_by(email=form.email.data).first())
+        if person_registered:
+            flash(('danger', f'Пользователь с email "{person_email}" уже зарегистрирован'))
+        else:
+            image = form.image.data
+            response = recognition_api.post(
+                f'http://{FACE_RECOGNITION_SERVER}/add-person',
+                files={
+                    'image': image
+                }
+            ).json()
+            if 'error' not in response:
+                first_name = form.first_name.data
+                last_name = form.last_name.data
+                person_id = response['person_id']
+                person = Person(
+                    id=person_id,
+                    email=person_email,
+                    first_name=first_name,
+                    last_name=last_name
+                )
+                db.session.add(person)
+                db.session.commit()
+                flash(('success', f'{first_name} {last_name} успешно добавлен'))
+                form = AddPersonForm()
+            else:
+                flash(('danger', response["error"]))
+    context = {
+        'init_js_script': 'AddPerson',
+        'recognition_server': FACE_RECOGNITION_SERVER,
+        'form': form
+    }
+    return render_template('add_person.html', **context)
+
+
+@bp.route('/find-faces', methods=['GET', 'POST'])
+def find_faces():
+    if request.method == 'GET':
+        image_url = request.args.get('image_url')
+        if image_url:
+            try:
+                img_data = requests.get(image_url).content
+            except RequestException:
+                return jsonify({'error': 'invalid image URL'})
+
+            response = recognition_api.post(
+                f'http://{FACE_RECOGNITION_SERVER}/find-faces',
+                files={
+                    'image': img_data
+                }
+            ).json()
+            return jsonify(response)
+        return render_template('verification.html')
+    elif request.method == 'POST':
+        image = request.files.get('image')
+        if image:
+            response = recognition_api.post(
+                f'http://{FACE_RECOGNITION_SERVER}/find-faces',
                 files={
                     'image': image.stream
                 }

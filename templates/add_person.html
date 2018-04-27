@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Добавление пользователя{% endblock %}
+{% block head %}
+    {{ super() }}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/open-iconic/1.1.1/font/css/open-iconic-bootstrap.min.css"
+          rel="stylesheet">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"
+            integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm"
+            crossorigin="anonymous"></script>
+    <link href="{{ url_for('static', filename='css/header.css') }}" rel="stylesheet">
+
+    <style>
+        .image-url {
+            width: 45% !important;
+        }
+    </style>
+    <script>
+        window.recognition_server = "{{ recognition_server }}";
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="header-container">
+        <div class="cover-container d-flex h-100 p-3 mx-auto flex-column">
+            <header class="masthead mb-auto">
+                <div class="inner">
+                    <h3 class="masthead-brand">FaceNet</h3>
+                    <nav class="nav nav-masthead justify-content-center">
+                        <a class="nav-link" href="/">Главная</a>
+                        <a class="nav-link" href="/identification">Идентификация</a>
+                        <a class="nav-link" href="/verification">Верификация</a>
+                        <a class="nav-link" href="#">Возможности</a>
+                    </nav>
+                </div>
+            </header>
+        </div>
+    </div>
+    <div class="container" id="identification-container">
+        <video id="webcam" hidden></video>
+        <h1 class="my-4 text-center">Добавление пользователя</h1>
+        <div class="row justify-content-md-center">
+            <div class="col-md-7">
+                <div class="card mb-4 box-shadow" id="meow">
+                    <canvas class="card-img-top face-canvas" width="640" height="479"></canvas>
+                    <div class="card-body">
+                        <div class="form-inline d-flex justify-content-between">
+                            <input class="form-control form-control-sm image-url" type="text"
+                                   placeholder="URL-адрес изображения">
+                            <button type="button" class="btn btn-outline-secondary btn-sm mr-3"
+                                    id="open-image-url">
+                                Загрузить <span class="oi oi-cloud-upload"></span></button>
+                            <label class="btn btn-outline-secondary btn-sm">
+                                Обзор <input type="file" id="open-image" hidden>
+                            </label>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="open-webcam">
+                                Веб-камера <span class="oi oi-aperture"></span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-md-center">
+            <div class="col-md-7">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message[0] }}" style="min-height: 50px;" role="alert"
+                                 id="result">
+                                {{ message[1] }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+        <div class="row justify-content-md-center">
+            <div class="col-md-7">
+                <button type="button" class="btn btn-primary btn-lg btn-block" id="add-person-btn" data-toggle="modal"
+                        data-target="#addPersonModal" disabled>Добавить
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="addPersonModal" tabindex="-1" role="dialog"
+         aria-labelledby="addPersonModal" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPersonModal">Добавление пользователя</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" enctype="multipart/form-data" id="add-person-form">
+                        {{ form.csrf_token }}
+                        {{ form.image(id="person-image", hidden=True) }}
+                        <div class="form-group">
+                            <label for="person-email" class="col-form-label">{{ form.email.label }}:</label>
+                            {{ form.email(class="form-control", id="person-email", required='') }}
+                        </div>
+                        <div class="form-group">
+                            <label for="person-first-name" class="col-form-label">{{ form.first_name.label }}:</label>
+                            {{ form.first_name(class="form-control", id="person-first-name", required='') }}
+                        </div>
+                        <div class="form-group">
+                            <label for="person-last-name" class="col-form-label">{{ form.last_name.label }}:</label>
+                            {{ form.last_name(class="form-control", id="person-last-name", required='') }}
+                        </div>
+                        <div class="form-group">
+                            <label for="person-addition-info"
+                                   class="col-form-label">{{ form.addition_info.label }}:</label>
+                            {{ form.addition_info(class="form-control", id="person-addition-info") }}
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" id="submit-person-btn">Добавить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
