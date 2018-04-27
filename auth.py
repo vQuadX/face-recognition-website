@@ -17,6 +17,6 @@ def authorize():
     except requests.ConnectionError:
         print('Server authentication error')
     else:
-        access_token = auth_response.json()['access_token']
-        session.headers.update({'Authorization': f'JWT {access_token}'})
+        access_token = auth_response.json()['jwt']
+        session.headers.update({'Authorization': f'Bearer {access_token}'})
     return session
