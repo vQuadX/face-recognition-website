@@ -12,7 +12,6 @@ $.FaceRecognizer.Identification = {
         this.video = $('#webcam').get(0);
         this.socket = new WebSocket(`ws://${window.recognition_server}/ws`);
         this.streamStarted = false;
-
         this.constraints = {
             video: {
                 width: {
@@ -124,17 +123,19 @@ $.FaceRecognizer.Identification = {
 
         this.video.addEventListener('play', function () {
             let identification = $.FaceRecognizer.Identification;
+            identification.socket.send(JSON.stringify({'mode': 'face-recognition'}));
             let that = this;
             let frames = 0;
             (function loop() {
                 if (!that.paused && !that.ended) {
                     identification.ctx.drawImage(that, 0, 0);
-                    let src = identification.canvas.toDataURL('image/jpeg');
                     if (faces) {
                         identification.drawFaceRectanglesWithLabels(faces, personsData);
                     }
                     if (frames % 5 === 0) {
-                        identification.socket.send(src);
+                        identification.canvas.toBlob(blob => {
+                            identification.socket.send(blob);
+                        }, 'image/jpeg');
                     }
                     frames++;
                     setTimeout(loop, 1000 / 25);
@@ -147,12 +148,7 @@ $.FaceRecognizer.Identification = {
         function success(stream) {
             that.video.srcObject = stream;
             const track = stream.getVideoTracks()[0];
-            console.log(track.getConstraints());
             imageCapture = new ImageCapture(track);
-        }
-
-        function error(error) {
-            console.error(error)
         }
 
         function stopStream() {
@@ -174,7 +170,7 @@ $.FaceRecognizer.Identification = {
             if (!that.streamStarted) {
                 that.personFaces = [];
                 that.perosonsInfo = [];
-                navigator.mediaDevices.getUserMedia(that.constraints).then(success).catch(error);
+                navigator.mediaDevices.getUserMedia(that.constraints).then(success).catch(error => console.error(error));
                 that.video.play();
                 that.streamStarted = true;
             } else {

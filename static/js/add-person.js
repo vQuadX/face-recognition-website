@@ -60,17 +60,19 @@ $.FaceRecognizer.AddPerson = {
 
         this.video.addEventListener('play', function () {
             let addPerson = $.FaceRecognizer.AddPerson;
+            addPerson.socket.send(JSON.stringify({'mode': 'face-detection'}));
             let that = this;
             let frames = 0;
             (function loop() {
                 if (!that.paused && !that.ended) {
                     addPerson.ctx.drawImage(that, 0, 0);
-                    let src = addPerson.canvas.toDataURL('image/png');
                     if (faces) {
                         $.FaceRecognizer.image.drawFaceRectangles(addPerson.ctx, faces);
                     }
                     if (frames % 3 === 0) {
-                        addPerson.socket.send('find-faces;' + src);
+                        addPerson.canvas.toBlob(blob => {
+                            addPerson.socket.send(blob);
+                        }, 'image/jpeg', 0.8);
                     }
                     frames++;
                     setTimeout(loop, 1000 / 27);
