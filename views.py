@@ -1,7 +1,7 @@
 from datetime import timezone
 
 import requests
-from flask import render_template, Blueprint, request, jsonify, flash
+from flask import render_template, Blueprint, request, jsonify, flash, abort
 from requests import RequestException
 
 from auth import authorize
@@ -159,6 +159,29 @@ def add_person():
         'form': form
     }
     return render_template('add_person.html', **context)
+
+
+@bp.route('/person/<string:uuid>')
+def person(uuid):
+    person = Person.query.get(uuid)
+    if person:
+        person_info = person.to_json()
+        if person_info:
+            registered = person_info['registered']
+            person_info['registered'] = {
+                'utc': registered.replace(tzinfo=timezone.utc).timestamp(),
+                'formatted': format_datetime(registered)
+            }
+        images = recognition_api.get(
+            f'http://{FACE_RECOGNITION_SERVER}/person-images/{uuid}'
+        ).json()['images']
+        context = {
+            'person': person_info,
+            'images': [f'http://{FACE_RECOGNITION_SERVER}/{image}' for image in images]
+        }
+        return render_template('person.html', **context)
+    else:
+        abort(404)
 
 
 @bp.route('/find-faces', methods=['GET', 'POST'])
