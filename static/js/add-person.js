@@ -32,7 +32,7 @@ $.FaceRecognizer.AddPerson = {
             if (that.addPersonForm.get(0).checkValidity()) {
                 that.sendForm().done(data => {
                     let alertType = data.status === 'success' ? 'success' : 'danger';
-                    $('#alert').html(`<div class="alert alert-${alertType}" style="min-height:50px;" role="alert" id="result">${data.message}</div>`)
+                    $('#alert').html(`<div class="alert alert-${alertType}" style="min-height:50px;" role="alert" id="result">${data.message}</div>`);
                     $('#addPersonModal').modal('hide');
                     $(':input', '#addPersonModal').not(':button, :submit, :reset, :hidden').val('')
                 });
@@ -44,6 +44,7 @@ $.FaceRecognizer.AddPerson = {
                 that.files = e.target.files;
                 $.FaceRecognizer.image.openFromFile(that.files[0], null,
                     function (src, ratio, offset, ctx) {
+                        that.personImage = that.files[0];
                         that.highlightFaces(that.sendImageFile(that.files[0]), ratio, offset, ctx)
                     });
             }
@@ -51,6 +52,7 @@ $.FaceRecognizer.AddPerson = {
         $('#open-image-url').on('click', function () {
             return $.FaceRecognizer.image.openFromURL(null,
                 function (src, ratio, offset, ctx) {
+                    that.personImage = src;
                     that.highlightFaces(that.sendImageURL(src), ratio, offset, ctx)
                 })
         });
@@ -147,6 +149,13 @@ $.FaceRecognizer.AddPerson = {
                 let faces = this.utils.scaleRectangles(data['faces'], ratio, offset);
                 this.image.drawFaceRectangles(ctx, faces);
                 $('#add-person-btn').prop('disabled', faces.length !== 1);
+                if (faces.length > 1) {
+                    this.alert('warning', `На изображении найдено несколько портретов (${faces.length}). Загрузите изображение с одним портретом`)
+                } else if (faces.length === 0) {
+                    this.alert('danger', 'На изображении не найдено портретов')
+                } else {
+                    $('#alert').find('.alert').remove();
+                }
             }
         );
     },
@@ -165,5 +174,8 @@ $.FaceRecognizer.AddPerson = {
             cache: false,
             contentType: false
         });
+    },
+    alert: function (alertType, message) {
+        $('#alert').html(`<div class="alert alert-${alertType}" style="min-height:50px;" role="alert" id="result">${message}</div>`);
     }
 };
