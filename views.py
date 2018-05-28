@@ -128,7 +128,11 @@ def add_person():
         person_email = form.email.data
         person_registered = bool(Person.query.filter_by(email=form.email.data).first())
         if person_registered:
-            flash(('danger', f'Пользователь с email "{person_email}" уже зарегистрирован'))
+            # flash(('danger', f'Пользователь с email "{person_email}" уже зарегистрирован'))
+            return jsonify({
+                'status': 'error',
+                'message': f'Пользователь с email "{person_email}" уже зарегистрирован',
+            })
         else:
             image = form.image.data
             response = recognition_api.post(
@@ -137,7 +141,7 @@ def add_person():
                     'image': image
                 }
             ).json()
-            if 'error' not in response:
+            if response['status'] == 'success':
                 first_name = form.first_name.data
                 last_name = form.last_name.data
                 person_id = response['person_id']
@@ -145,14 +149,23 @@ def add_person():
                     id=person_id,
                     email=person_email,
                     first_name=first_name,
-                    last_name=last_name
+                    last_name=last_name,
+                    additional_info=form.addition_info.data.strip() or None
                 )
                 db.session.add(person)
                 db.session.commit()
-                flash(('success', f'{first_name} {last_name} успешно добавлен'))
-                form = AddPersonForm()
+                return jsonify({
+                    'status': 'success',
+                    'message': f'{first_name} {last_name} успешно добавлен',
+                })
+                # flash(('success', f'{first_name} {last_name} успешно добавлен'))
+                # form = AddPersonForm()
             else:
-                flash(('danger', response["error"]))
+                # flash(('danger', response['error']))
+                return jsonify({
+                    'status': 'error',
+                    'message': response['error'],
+                })
     context = {
         'init_js_script': 'AddPerson',
         'recognition_server': FACE_RECOGNITION_SERVER,

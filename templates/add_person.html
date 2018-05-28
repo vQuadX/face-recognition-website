@@ -61,7 +61,7 @@
             </div>
         </div>
         <div class="row justify-content-md-center">
-            <div class="col-md-7">
+            <div class="col-md-7" id="alert">
                 {% with messages = get_flashed_messages() %}
                     {% if messages %}
                         {% for message in messages %}
@@ -88,7 +88,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addPersonModal">Добавление пользователя</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              -      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>

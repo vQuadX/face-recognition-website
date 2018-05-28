@@ -30,7 +30,12 @@ $.FaceRecognizer.AddPerson = {
         this.addPersonForm = $('#add-person-form');
         $('#submit-person-btn').on('click', function () {
             if (that.addPersonForm.get(0).checkValidity()) {
-                that.sendForm.done(data => console.log(data))
+                that.sendForm().done(data => {
+                    let alertType = data.status === 'success' ? 'success' : 'danger';
+                    $('#alert').html(`<div class="alert alert-${alertType}" style="min-height:50px;" role="alert" id="result">${data.message}</div>`)
+                    $('#addPersonModal').modal('hide');
+                    $(':input', '#addPersonModal').not(':button, :submit, :reset, :hidden').val('')
+                });
             } else {
                 $('<input type="submit">').hide().appendTo(that.addPersonForm).click().remove();
             }
