@@ -43,6 +43,8 @@ class Person(db.Model):
     email = db.Column(db.String(255), unique=True)
     first_name = db.Column(db.String(255))
     last_name = db.Column(db.String(255))
+    additional_info = db.Column(db.Text())
+
     registered = db.Column(db.DateTime(), server_default=func.now())
 
     def to_json(self):
