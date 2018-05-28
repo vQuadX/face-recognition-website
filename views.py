@@ -1,11 +1,11 @@
-from datetime import timezone
+from datetime import timezone, datetime
 
 import requests
-from flask import render_template, Blueprint, request, jsonify, flash, abort
+from flask import render_template, Blueprint, request, jsonify, abort
 from requests import RequestException
 
 from auth import authorize
-from forms import AddPersonForm
+from forms import AddPersonForm, AddFaceForm
 from models import Person, db
 from settings import FACE_RECOGNITION_SERVER
 from utils import format_datetime
@@ -68,7 +68,7 @@ def identification():
                         person['info'] = person_info
             return jsonify(response)
         else:
-            return jsonify({'error': 'image file required'})
+            return jsonify({'error': 'Image is not specified'})
 
 
 @bp.route('/getPersonById/<string:uuid>')
@@ -118,7 +118,7 @@ def verification():
             ).json()
             return jsonify(response)
         else:
-            return jsonify({'error': 'image file required'})
+            return jsonify({'error': 'Image is not specified'})
 
 
 @bp.route('/add-person', methods=['GET', 'POST'])
@@ -186,6 +186,63 @@ def add_person():
         'form': form
     }
     return render_template('add_person.html', **context)
+
+
+@bp.route('/add-face', methods=['GET', 'POST'])
+def add_face():
+    form = AddFaceForm()
+    if form.validate_on_submit():
+        person_email = form.email.data
+        person = Person.query.filter_by(email=form.email.data).first()
+        if person:
+            person_id = person.id
+            image = form.image.data
+            if not image:
+                return jsonify({
+                    'status': 'error',
+                    'error': 'Image is not specified'
+                })
+            if isinstance(image, str):
+                try:
+                    image = requests.get(image).content
+                except RequestException:
+                    return jsonify({
+                        'status': 'error',
+                        'error': 'Неверно указан URL'
+                    })
+
+            response = recognition_api.post(
+                f'http://{FACE_RECOGNITION_SERVER}/add-face/{person_id}',
+                files={
+                    'image': image
+                }
+            ).json()
+            if response['status'] == 'success':
+                person.updated = datetime.now()
+                person.faces = person.faces + 1
+                db.session.commit()
+                return jsonify({
+                    'status': 'success',
+                    'message': f'Лицо успешно добавлено для {person.first_name} {person.last_name}',
+                })
+            else:
+                return jsonify({
+                    'status': 'error',
+                    'message': response['error']
+                })
+
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': f'Пользователь с email "{person_email}" не зарегистрирован',
+            })
+
+    context = {
+        'init_js_script': 'AddFace',
+        'recognition_server': FACE_RECOGNITION_SERVER,
+        'form': form
+    }
+    return render_template('add_face.html', **context)
 
 
 @bp.route('/person/<string:email>')

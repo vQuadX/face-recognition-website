@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Добавление лица для пользователя{% endblock %}
+{% block head %}
+    {{ super() }}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/open-iconic/1.1.1/font/css/open-iconic-bootstrap.min.css"
+          rel="stylesheet">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"
+            integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm"
+            crossorigin="anonymous"></script>
+    <link href="{{ url_for('static', filename='css/header.css') }}" rel="stylesheet">
+
+    <style>
+        .image-url {
+            width: 45% !important;
+        }
+    </style>
+    <script>
+        window.recognition_server = "{{ recognition_server }}";
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="header-container">
+        <div class="cover-container d-flex h-100 p-3 mx-auto flex-column">
+            <header class="masthead mb-auto">
+                <div class="inner">
+                    <h3 class="masthead-brand">FaceNet</h3>
+                    <nav class="nav nav-masthead justify-content-center">
+                        <a class="nav-link" href="/">Главная</a>
+                        <a class="nav-link" href="/identification">Идентификация</a>
+                        <a class="nav-link" href="/verification">Верификация</a>
+                        <a class="nav-link" href="#">Возможности</a>
+                    </nav>
+                </div>
+            </header>
+        </div>
+    </div>
+    <div class="container" id="identification-container">
+        <video id="webcam" hidden></video>
+        <h1 class="my-4 text-center">Добавление лица для пользователя</h1>
+        <div class="row justify-content-md-center">
+            <div class="col-md-7">
+                <div class="card mb-4 box-shadow" id="meow">
+                    <canvas class="card-img-top face-canvas" width="640" height="479"></canvas>
+                    <div class="card-body">
+                        <div class="form-inline d-flex justify-content-between">
+                            <input class="form-control form-control-sm image-url" type="text"
+                                   placeholder="URL-адрес изображения">
+                            <button type="button" class="btn btn-outline-secondary btn-sm mr-3"
+                                    id="open-image-url">
+                                Загрузить <span class="oi oi-cloud-upload"></span></button>
+                            <label class="btn btn-outline-secondary btn-sm">
+                                Обзор <input type="file" id="open-image" hidden>
+                            </label>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="open-webcam">
+                                Веб-камера <span class="oi oi-aperture"></span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-md-center">
+            <div class="col-md-7" id="alert">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message[0] }}" style="min-height: 50px;" role="alert" id="result">
+                                {{ message[1] }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+
+        <div class="row justify-content-md-center">
+            <div class="col-md-7 mb-4">
+                <form method="POST" enctype="multipart/form-data" id="add-face-form">
+                    {{ form.csrf_token }}
+                    {{ form.email(id="person-email", placeholder='Электронная почта', required='', class="form-control") }}
+                </form>
+            </div>
+        </div>
+
+        <div class="row justify-content-md-center">
+            <div class="col-md-7">
+                <button type="button" class="btn btn-primary btn-lg btn-block" id="add-face-btn" disabled>Добавить
+                </button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
