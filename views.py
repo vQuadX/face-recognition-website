@@ -174,9 +174,9 @@ def add_person():
     return render_template('add_person.html', **context)
 
 
-@bp.route('/person/<string:uuid>')
-def person(uuid):
-    person = Person.query.get(uuid)
+@bp.route('/person/<string:email>')
+def person(email):
+    person = Person.query.filter_by(email=email).first()
     if person:
         person_info = person.to_json()
         if person_info:
@@ -186,7 +186,7 @@ def person(uuid):
                 'formatted': format_datetime(registered)
             }
         images = recognition_api.get(
-            f'http://{FACE_RECOGNITION_SERVER}/person-images/{uuid}'
+            f'http://{FACE_RECOGNITION_SERVER}/person-images/{person.id}'
         ).json()['images']
         context = {
             'person': person_info,
