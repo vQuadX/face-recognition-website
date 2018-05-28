@@ -103,7 +103,7 @@ def verification():
             face_embeddings = request.json.get('face_embeddings')
             if face_embeddings:
                 response = recognition_api.post(
-                    f'http://{FACE_RECOGNITION_SERVER}/compare-embeddings',
+                    f'http://{FACE_RECOGNITION_SERVER}/verify-embeddings',
                     json=face_embeddings
                 ).json()
                 return jsonify(response)
