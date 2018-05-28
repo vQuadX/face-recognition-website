@@ -40,11 +40,12 @@ class Role(db.Model, RoleMixin):
 class Person(db.Model):
     __tablename__ = 'persons'
     id = db.Column(db.String(36), primary_key=True)
-    email = db.Column(db.String(255), unique=True)
+    email = db.Column(db.String(255), unique=True, nullable=False)
     first_name = db.Column(db.String(255))
     last_name = db.Column(db.String(255))
     additional_info = db.Column(db.Text())
-
+    faces = db.Column(db.Integer(), nullable=False, default=0)
+    updated = db.Column(db.DateTime())
     registered = db.Column(db.DateTime(), server_default=func.now())
 
     def to_json(self):
