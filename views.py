@@ -135,6 +135,20 @@ def add_person():
             })
         else:
             image = form.image.data
+            if not image:
+                return jsonify({
+                    'status': 'error',
+                    'error': 'Image is not specified'
+                })
+            if isinstance(image, str):
+                try:
+                    image = requests.get(image).content
+                except RequestException:
+                    return jsonify({
+                        'status': 'error',
+                        'error': 'Неверно указан URL'
+                    })
+
             response = recognition_api.post(
                 f'http://{FACE_RECOGNITION_SERVER}/add-person',
                 files={
