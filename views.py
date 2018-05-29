@@ -21,6 +21,7 @@ def index():
 
 @bp.route('/identification', methods=['GET', 'POST'])
 def identification():
+    image = None
     if request.method == 'GET':
         image_url = request.args.get('image_url')
         if image_url:
@@ -28,47 +29,43 @@ def identification():
                 img_data = requests.get(image_url).content
             except RequestException:
                 return jsonify({'error': 'invalid image URL'})
-
-            response = recognition_api.post(
-                f'http://{FACE_RECOGNITION_SERVER}/identify-faces',
-                files={
-                    'image': img_data
-                }
-            ).json()
-            return jsonify(response)
-
-        context = {
-            'init_js_script': 'Identification',
-            'recognition_server': FACE_RECOGNITION_SERVER
-        }
-        return render_template('identification.html', **context)
+            else:
+                image = img_data
+        else:
+            context = {
+                'init_js_script': 'Identification',
+                'recognition_server': FACE_RECOGNITION_SERVER
+            }
+            return render_template('identification.html', **context)
     elif request.method == 'POST':
         image = request.files.get('image')
         if image:
-            response = recognition_api.post(
-                f'http://{FACE_RECOGNITION_SERVER}/identify-faces',
-                files={
-                    'image': image.stream
-                }
-            ).json()
-            persons = response.get('persons')
-            if persons:
-                for person in persons:
-                    person_id = person['id']
-                    if person_id:
-                        person_info = Person.query.get(person_id)
-                        if person_info:
-                            person_info = person_info.to_json()
-                            del person_info['id']
-                            registered = person_info['registered']
-                            person_info['registered'] = {
-                                'utc': registered.replace(tzinfo=timezone.utc).timestamp(),
-                                'formatted': format_datetime(registered)
-                            }
-                        person['info'] = person_info
-            return jsonify(response)
+            image = image.stream
         else:
             return jsonify({'error': 'Image is not specified'})
+
+    response = recognition_api.post(
+        f'http://{FACE_RECOGNITION_SERVER}/identify-faces',
+        files={
+            'image': image
+        }
+    ).json()
+    persons = response.get('persons')
+    if persons:
+        for person in persons:
+            person_id = person['id']
+            if person_id:
+                person_info = Person.query.get(person_id)
+                if person_info:
+                    person_info = person_info.to_json()
+                    del person_info['id']
+                    registered = person_info['registered']
+                    person_info['registered'] = {
+                        'utc': registered.replace(tzinfo=timezone.utc).timestamp(),
+                        'formatted': format_datetime(registered)
+                    }
+                person['info'] = person_info
+        return jsonify(response)
 
 
 @bp.route('/getPersonById/<string:uuid>')
@@ -128,10 +125,10 @@ def add_person():
         person_email = form.email.data
         person_registered = bool(Person.query.filter_by(email=form.email.data).first())
         if person_registered:
-            # flash(('danger', f'Пользователь с email "{person_email}" уже зарегистрирован'))
+            # flash(('danger', f'Пользователь с email "<strong>{person_email}</strong>" уже зарегистрирован'))
             return jsonify({
                 'status': 'error',
-                'message': f'Пользователь с email "{person_email}" уже зарегистрирован',
+                'message': f'Пользователь с email "<strong>{person_email}</strong>" уже зарегистрирован',
             })
         else:
             image = form.image.data
@@ -170,7 +167,7 @@ def add_person():
                 db.session.commit()
                 return jsonify({
                     'status': 'success',
-                    'message': f'{first_name} {last_name} успешно добавлен',
+                    'message': f'<strong>{first_name} {last_name}</strong> успешно добавлен',
                 })
                 # flash(('success', f'{first_name} {last_name} успешно добавлен'))
                 # form = AddPersonForm()
@@ -234,7 +231,7 @@ def add_face():
         else:
             return jsonify({
                 'status': 'error',
-                'message': f'Пользователь с email "{person_email}" не зарегистрирован',
+                'message': f'Пользователь с email "<strong>{person_email}</strong>" не зарегистрирован',
             })
 
     context = {
