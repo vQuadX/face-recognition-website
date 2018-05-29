@@ -214,8 +214,10 @@ $.FaceRecognizer.Identification = {
         return `${-this.canvas.height / 2 + rect.y + rect.height / 2}, -${this.canvas.width - rect.x - rect.width}`
     },
     formatPersonDescription: function (info) {
-        return `Электоронная почта:<br>${info['email']}<br>` +
-            `Зарегистрирован:<br>${info['registered']['formatted']}`
+        let additionalInfo = info['additional_info'];
+        return `<strong>Электоронная почта</strong>:<br>${info['email']}<br>` +
+            `<strong>Зарегистрирован</strong>:<br>${info['registered']['formatted']}` +
+            (additionalInfo ? '<br>' + additionalInfo : '')
     },
     // TODO persons, faces
     drawFaceRectanglesWithLabels: function (faces, persons) {
